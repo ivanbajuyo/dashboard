@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chart {
+  id             String        @id @default(cuid())
+  title          String
+  type           String
+  labels         String
+  data           String
+  datasets       String?
+  description    String?       @default("")
+  isPinned       Boolean       @default(false)
+  collection     String?
+  colorPalette   String?       @default("default")
+  shareToken     String?       @unique
+  autoRefresh    Boolean       @default(false)
+  refreshInterval Int?         @default(5)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  annotations    Annotation[]
+  dashboards     DashboardChart[]
+}
+
+model Annotation {
+  id        String   @id @default(cuid())
+  chartId   String
+  label     String?
+  dataIndex Int
+  text      String
+  color     String?  @default("#ef4444")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chart     Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+}
+
+model CustomDashboard {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  layout      String           // JSON: { chartIds: string[], columns: number }
+  isDefault   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  charts      DashboardChart[]
+}
+
+model DashboardChart {
+  id             String          @id @default(cuid())
+  dashboardId    String
+  chartId        String
+  order          Int             @default(0)
+  width          Int             @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  dashboard      CustomDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  chart          Chart           @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  @@unique([dashboardId, chartId])
+}
